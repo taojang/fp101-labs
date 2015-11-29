@@ -1,6 +1,7 @@
 module Lab5 where
 
 import Control.Monad
+import Control.Applicative
 
 data Concurrent a = Concurrent ((a -> Action) -> Action)
 
@@ -49,26 +50,25 @@ atom x = Concurrent (\f -> doAction x f)
 -- ===================================
 
 fork :: Concurrent a -> Concurrent ()
-fork = error "You have to implement fork"
+fork x = Concurrent (\ f -> Fork (action x) (f ()))
 
 par :: Concurrent a -> Concurrent a -> Concurrent a
-par = error "You have to implement par"
+par (Concurrent a) (Concurrent b) = Concurrent(\f -> Fork (a f) (b f))
 
 
 -- ===================================
 -- Ex. 4
 -- ===================================
 
-instance Functor Concurrent where
-  fmap = undefined
-
-instance Applicative Concurrent where
-  pure = undefined
-  (<*>) = undefined
-
+-- g :: (a -> Concurrent b) === (a -> ((b -> Action) -> Action))
+-- m a :: Concurrent a
+-- f :: ((a -> Action) -> Action)
+-- h :: b -> Action
 instance Monad Concurrent where
-    (Concurrent f) >>= g = error "You have to implement >>="
-    return x = Concurrent (\c -> c x)
+  (Concurrent f) >>= g = Concurrent (\h -> f $ andThen h)
+    where andThen c = (\x -> case (g x) of
+                        (Concurrent i) -> i c)
+  return x = Concurrent (\c -> c x)
 
 
 -- ===================================
@@ -76,7 +76,11 @@ instance Monad Concurrent where
 -- ===================================
 
 roundRobin :: [Action] -> IO ()
-roundRobin = error "You have to implement roundRobin"
+roundRobin [] = return ()
+roundRobin (x : xs) = case x of
+  Stop -> return ()
+  Fork a b -> return ()
+  Atom a -> return ()
 
 -- ===================================
 -- Tests
