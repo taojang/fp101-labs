@@ -1,7 +1,6 @@
 module Lab5 where
 
 import Control.Monad
-import Control.Applicative
 
 data Concurrent a = Concurrent ((a -> Action) -> Action)
 
@@ -78,9 +77,9 @@ instance Monad Concurrent where
 roundRobin :: [Action] -> IO ()
 roundRobin [] = return ()
 roundRobin (x : xs) = case x of
-  Stop -> return ()
-  Fork a b -> return ()
-  Atom a -> return ()
+  Stop -> roundRobin xs
+  Atom a -> a >>= (\ a' -> roundRobin $ xs ++ [a'])
+  Fork a b -> roundRobin $ xs ++ [a, b]
 
 -- ===================================
 -- Tests
